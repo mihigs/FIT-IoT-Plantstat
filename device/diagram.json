@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "author": "Miralem Avdic",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": -32, "left": 172, "attrs": {} },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": -148.01,
+      "left": 73.06,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+    [ "esp:3V3", "ldr1:VCC", "red", [ "h74.03", "v-244.51" ] ],
+    [ "esp:GND.1", "ldr1:GND", "black", [ "h56.03", "v-225.01" ] ],
+    [ "ldr1:AO", "esp:D33", "green", [ "v-0.42", "h14.77", "v31.44", "h-175.27", "v105.19" ] ]
+  ],
+  "dependencies": {}
+}
