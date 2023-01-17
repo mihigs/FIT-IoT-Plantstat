@@ -3,7 +3,7 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    padding: 2rem;
 }
 
 .chart-container{
@@ -12,6 +12,6 @@
 }
 
 .set-threshold-btn{
-    width: 2rm;
-    height: 5rm;
+    width: 8rem;
+    height: 3rem;
 }

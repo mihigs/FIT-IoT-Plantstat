@@ -101,7 +101,7 @@ function Home() {
   return(
     <div className="main-container">
           <div className="header">
-            <h1 className="display-4 mx-5 mt-2">Plantstat</h1>
+            <h1 className="display-4 mx-1 mt-2">Plantstat</h1>
             <button type="button" class="set-threshold-btn btn btn-info" data-toggle="modal" data-target="#myModal">Setup alerts</button>
           </div>
           <hr/>
