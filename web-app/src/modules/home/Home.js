@@ -1,4 +1,5 @@
 // import { getFirestore, collection, getDocs } from 'firebase/firestore/lite';
+import "./Home.css";
 import { getDatabase, ref, child, get } from "firebase/database";
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
@@ -99,16 +100,38 @@ function Home() {
   
   return(
     <div className="main-container">
-        <div className="jumbotron">
-          <h1 className="display-4">Plantstat</h1>
-          <p className="lead"></p>
-          <hr className="my-4"/>
-        </div>
+          <div className="header">
+            <h1 className="display-4 mx-5 mt-2">Plantstat</h1>
+            <button type="button" class="set-threshold-btn btn btn-info" data-toggle="modal" data-target="#myModal">Setup alerts</button>
+          </div>
+          <hr/>
         {/* {metrics.map((metric, index)=> {
           <p>Metric: {{metric}}</p>
         })} */}
 
-    <Line width={50} height={40} options={options} data={data}/>
+    <div className="chart-container mx-auto">
+      <Line width={50} height={40} options={options} data={data}/>
+    </div>
+
+
+    <div id="myModal" class="modal fade" role="dialog">
+      <div class="modal-dialog">
+
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Modal Header</h4>
+          </div>
+          <div class="modal-body">
+            <p>Some text in the modal.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
 
     </div>
   )
