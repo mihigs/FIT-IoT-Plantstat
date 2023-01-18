@@ -10,6 +10,20 @@
       "top": -148.01,
       "left": 73.06,
       "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 6.28,
+      "left": -20.01,
+      "attrs": { "color": "limegreen" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 34.61,
+      "left": 36.28,
+      "attrs": { "value": "230" }
     }
   ],
   "connections": [
@@ -17,7 +31,10 @@
     [ "esp:RX0", "$serialMonitor:TX", "", [] ],
     [ "esp:3V3", "ldr1:VCC", "red", [ "h74.03", "v-244.51" ] ],
     [ "esp:GND.1", "ldr1:GND", "black", [ "h56.03", "v-225.01" ] ],
-    [ "ldr1:AO", "esp:D33", "green", [ "v-0.42", "h14.77", "v31.44", "h-175.27", "v105.19" ] ]
+    [ "esp:GND.2", "led1:C", "black", [ "h-182.61", "v-82.65" ] ],
+    [ "ldr1:AO", "esp:D32", "green", [ "h16.34", "v51.43", "h-115.04", "v6.66" ] ],
+    [ "r1:2", "esp:D33", "green", [ "v0" ] ],
+    [ "r1:1", "led1:A", "green", [ "v0" ] ]
   ],
   "dependencies": {}
 }

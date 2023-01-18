@@ -40,16 +40,21 @@ unsigned long sendDataPrevMillis = 0;
 unsigned long getLDRmetricPrevMillis = 0;
 unsigned long count = 0;
 
-//Photoresistor sensor (LDR)
-const int LDR_PIN = 33;
+
+const int LDR_PIN = 32; //Photoresistor sensor (LDR)
+const int LDR_LED_PIN = 33; //LED diode
 
 const int minimum_sunlight = 172; //~8600 lux
+int LDR_threshold = 1001;
+int moisture_threshold = 800;
 
 int latest_LDR_metric = -1;
 
 //Retrieves the latest photoresistor sensor readings
 int getLDRmetric() {
   latest_LDR_metric = analogRead(LDR_PIN); 
+  //Turn on the LED if light metric is higher than the threshold
+  handleThreshold(LDR_threshold, latest_LDR_metric, LDR_LED_PIN);
   return latest_LDR_metric;
 }
 
@@ -69,14 +74,20 @@ void initWifi(){
   Serial.println(separator);
 }
 
-void initFirebase(){
-
-  // Serial.print("Firebase status: ");
+void handleThreshold(int threshold, int metric, int LED){
+  if(threshold > metric){
+    digitalWrite(LED, LOW);
+  }else{
+    digitalWrite(LED, HIGH);
+  }
 }
 
 void setup() {
   Serial.begin(115200);
   pinMode(LDR_PIN, INPUT); //Photoresistor (LDR) pin
+  pinMode(LDR_LED_PIN, OUTPUT); //LED diode
+  digitalWrite(LDR_LED_PIN, HIGH);
+
 
   //Log metrics
   // Serial.print("Initial LDR metric: ");
@@ -116,11 +127,6 @@ void setup() {
   Firebase.reconnectWiFi(true);
 
   Firebase.setDoubleDigits(5);
-
-
-  // // DateTime Sync - Init and get the time
-  // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  // // printLocalTime();
   Serial.println(separator);
 }
 
@@ -155,9 +161,24 @@ void loop() {
 
     // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create_Edit_Parse.ino
     FirebaseJson metricsJSON;
-    Serial.println("Creating JSON with metrics data...");
+    FirebaseJson thresholdsJSON;
 
-    //Setup incremental indexing for Firebase
+    Serial.println("Fetching thresholds... ");
+    if(Firebase.getJSON(fbdo, F("/device01/thresholds/light"))){
+      Serial.print("Light threshold: ");
+      Serial.println(fbdo.to<int>());
+      LDR_threshold = fbdo.to<int>();
+    }else{
+      Serial.println("No threshold found. Setting the defaults");
+      thresholdsJSON.set(F("light"), LDR_threshold);
+      thresholdsJSON.set(F("moisture"), moisture_threshold);
+    }
+
+    //Turn on the LED if light metric is higher than the threshold
+    handleThreshold(LDR_threshold, latest_LDR_metric, LDR_LED_PIN);
+
+    Serial.println("Creating JSON with metrics data...");
+    //Setup incremental indexing for Firebase //TODO: separate into function
     char firebase_db_path[24] = "/device01/metrics/LDR/";
     char countAsString[4];
     char fullPath[27];
