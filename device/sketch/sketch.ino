@@ -40,6 +40,9 @@ unsigned long sendDataPrevMillis = 0;
 unsigned long getLDRmetricPrevMillis = 0;
 unsigned long count = 0;
 
+// LDR Characteristics
+const float GAMMA = 0.7;
+const float RL10 = 50;
 
 const int LDR_PIN = 32; //Photoresistor sensor (LDR)
 const int LDR_LED_PIN = 33; //LED diode
@@ -52,7 +55,16 @@ int latest_LDR_metric = -1;
 
 //Retrieves the latest photoresistor sensor readings
 int getLDRmetric() {
-  latest_LDR_metric = analogRead(LDR_PIN); 
+  //Convert analog signal to lux
+  int analogValue = analogRead(LDR_PIN);
+  float voltage = analogValue / 1024. * 5;
+  float resistance = 2000 * voltage / (1 - voltage / 5);
+  float lux = pow(RL10 * 1e3 * pow(10, GAMMA) / resistance, (1 / GAMMA));
+  latest_LDR_metric = (int)lround(lux);
+
+  Serial.print("Lux: ");
+  Serial.println(lux);
+
   //Turn on the LED if light metric is higher than the threshold
   handleThreshold(LDR_threshold, latest_LDR_metric, LDR_LED_PIN);
   return latest_LDR_metric;
@@ -75,7 +87,7 @@ void initWifi(){
 }
 
 void handleThreshold(int threshold, int metric, int LED){
-  if(threshold > metric){
+  if(metric > threshold){
     digitalWrite(LED, LOW);
   }else{
     digitalWrite(LED, HIGH);

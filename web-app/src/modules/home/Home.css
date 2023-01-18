@@ -15,3 +15,8 @@
     width: 8rem;
     height: 3rem;
 }
+.input-container{
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+}

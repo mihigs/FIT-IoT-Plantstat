@@ -1,6 +1,6 @@
 // import { getFirestore, collection, getDocs } from 'firebase/firestore/lite';
 import "./Home.css";
-import { getDatabase, ref, child, get } from "firebase/database";
+import { getDatabase, ref, child, get, set } from "firebase/database";
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -60,6 +60,9 @@ export const options = {
 function Home() {
   const [metrics, setMetrics] = useState([]);
   const [labels, setLabels] = useState([]);
+  // const [thresholds, setThresholds] = useState([]);
+  const [lightThreshold, setLightThreshold] = useState();
+  const [moistureThreshold, setMoistureThreshold] = useState();
 
   const data = {
     labels,
@@ -87,6 +90,20 @@ function Home() {
     });
   }
 
+  async function getThresholds(){
+    const dbRef = ref(getDatabase());
+    get(child(dbRef, `device01/thresholds`)).then((snapshot) => {
+      if (snapshot.exists()) {
+        console.log(snapshot.val());
+        parseThresholds(snapshot.val());
+      } else {
+        console.log("No data available");
+      }
+    }).catch((error) => {
+      console.error(error);
+    });
+  }
+
   function parseMetrics(metricsObject){
     let metricsTemp = Object.values(metricsObject).map(metric => metric.LDRvalue).filter(x => x !== undefined);
     let labelsTemp = Object.values(metricsObject).filter(x => x.ts !== undefined).map(metric => new Date(metric.ts).toLocaleString('en-GB'));
@@ -94,15 +111,40 @@ function Home() {
     setLabels(labelsTemp);
   }
 
+  function parseThresholds(thresholdsObject){
+    let thresholdsTemp = Object.entries(thresholdsObject);
+    setLightThreshold(thresholdsTemp[0][1]);
+    setMoistureThreshold(thresholdsTemp[1][1]);
+
+  }
+
+  function handleSubmit(event){
+    const dbRef = ref(getDatabase());
+    let formData = {
+      'light': parseInt(lightThreshold),
+      'moisture': parseInt(moistureThreshold)
+    }
+    set(child(dbRef, '/device01/thresholds'), formData);
+  }
+
+  function handleLightInput(event){
+    setLightThreshold(event.target.value);
+  }
+
+  function handleMoistureInput(event){
+    setMoistureThreshold(event.target.value);
+  }
+
   useEffect(()=>{
     getMetrics();
+    getThresholds();
   }, []);
   
   return(
     <div className="main-container">
           <div className="header">
             <h1 className="display-4 mx-1 mt-2">Plantstat</h1>
-            <button type="button" class="set-threshold-btn btn btn-info" data-toggle="modal" data-target="#myModal">Setup alerts</button>
+            <button type="button" className="set-threshold-btn btn btn-info" data-toggle="modal" data-target="#myModal">Setup alerts</button>
           </div>
           <hr/>
         {/* {metrics.map((metric, index)=> {
@@ -114,19 +156,29 @@ function Home() {
     </div>
 
 
-    <div id="myModal" class="modal fade" role="dialog">
-      <div class="modal-dialog">
+    <div id="myModal" className="modal fade" role="dialog">
+      <div className="modal-dialog">
 
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Modal Header</h4>
+        <div className="modal-content">
+          <div className="modal-header">
+            <h4 className="modal-title">Setup alerts</h4>
+            <button type="button" className="close" data-dismiss="modal">&times;</button>
           </div>
-          <div class="modal-body">
-            <p>Some text in the modal.</p>
+          <div className="modal-body">
+            <p>Edit thresholds for sensor alerts</p>
+            <div className="modal-alerts-container">
+                <div className="input-container">
+                  <label>Light</label>
+                  <input value={lightThreshold} className="threshold-input" onChange={handleLightInput}/>
+                </div>
+                <div className="input-container">
+                  <label>Moisture</label>
+                  <input value={moistureThreshold} className="threshold-input" onChange={handleMoistureInput}/>
+                </div>
+            </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <div className="modal-footer">
+            <button onClick={handleSubmit} type="button" className="btn btn-success" data-dismiss="modal">Submit</button>
           </div>
         </div>
 
