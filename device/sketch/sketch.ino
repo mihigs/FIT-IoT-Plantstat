@@ -1,6 +1,5 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
-#include "time.h"
 
 // Provide the token generation process info.
 #include <addons/TokenHelper.h>
@@ -29,6 +28,8 @@ const int   daylightOffset_sec = 3600;
 #define USER_EMAIL "miralem.avdic24@gmail.com"
 #define USER_PASSWORD "kikiriki"
 
+const char* separator = "---------------------------------------";
+
 // Define Firebase Data object
 FirebaseData fbdo;
 
@@ -52,19 +53,10 @@ int getLDRmetric() {
   return latest_LDR_metric;
 }
 
-// String getTimestamp(){
-//   struct tm timeinfo;
-//   if(!getLocalTime(&timeinfo)){
-//     Serial.println("Failed to obtain time");
-//     return "Failed to obtain time";
-//   }
-//   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
-//   return "";
-// }
-
 void initWifi(){
   //Establish WiFi connection
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.println(separator);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -74,7 +66,7 @@ void initWifi(){
   Serial.println();
   Serial.print("Connected with IP: ");
   Serial.println(WiFi.localIP());
-  Serial.println();
+  Serial.println(separator);
 }
 
 void initFirebase(){
@@ -85,13 +77,15 @@ void initFirebase(){
 void setup() {
   Serial.begin(115200);
   pinMode(LDR_PIN, INPUT); //Photoresistor (LDR) pin
-  Serial.print("Initial LDR metric: ");
-  Serial.println(getLDRmetric());
+
+  //Log metrics
+  // Serial.print("Initial LDR metric: ");
+  // Serial.println(getLDRmetric());
 
   initWifi();
-  // initFirebase();
 
   //Log Firebase version
+  Serial.println(separator);
   Serial.println("Connecting to Firebase");
   Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
 
@@ -127,6 +121,7 @@ void setup() {
   // // DateTime Sync - Init and get the time
   // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   // // printLocalTime();
+  Serial.println(separator);
 }
 
 void loop() {
@@ -136,41 +131,23 @@ void loop() {
 
       getLDRmetric();
 
-      Serial.print("LDR metric: ");
+      //Log metrics
+      Serial.print("LDR metric updated: ");
       Serial.println(latest_LDR_metric);
   }
 
   // Firebase.ready() should be called repeatedly to handle authentication tasks.
   if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
   {
-    Serial.println("Firebase ready.");
+    Serial.println(separator);
+    Serial.println("Firebase: Ready");
+    Serial.print("Firebase loop index: ");
+    Serial.println(count);
+    
     sendDataPrevMillis = millis();
-
-    // Serial.printf("Set light metric... %s\n", Firebase.setInt(fbdo, F("/ldr_sensor_metrics/light"), latest_LDR_metric) ? "ok" : fbdo.errorReason().c_str());
-
-    // Serial.printf("Set timestamp... %s\n", Firebase.setTimestamp(fbdo, "/test/timestamp") ? "ok" : fbdo.errorReason().c_str());
-
-    // Serial.printf("Set bool... %s\n", Firebase.setBool(fbdo, F("/test/bool"), count % 2 == 0) ? "ok" : fbdo.errorReason().c_str());
-
-    // Serial.printf("Get bool... %s\n", Firebase.getBool(fbdo, FPSTR("/test/bool")) ? fbdo.to<bool>() ? "true" : "false" : fbdo.errorReason().c_str());
-
-    // bool bVal;
-    // Serial.printf("Get bool ref... %s\n", Firebase.getBool(fbdo, F("/test/bool"), &bVal) ? bVal ? "true" : "false" : fbdo.errorReason().c_str());
-
-    // Serial.printf("Set int... %s\n", Firebase.setInt(fbdo, F("/test/int"), count) ? "ok" : fbdo.errorReason().c_str());
-
-    // Serial.printf("Get int... %s\n", Firebase.getInt(fbdo, F("/test/int")) ? String(fbdo.to<int>()).c_str() : fbdo.errorReason().c_str());
 
     // int iVal = 0;
     // Serial.printf("Get int ref... %s\n", Firebase.getInt(fbdo, F("/test/int"), &iVal) ? String(iVal).c_str() : fbdo.errorReason().c_str());
-
-    // Serial.printf("Set float... %s\n", Firebase.setFloat(fbdo, F("/test/float"), count + 10.2) ? "ok" : fbdo.errorReason().c_str());
-
-    // Serial.printf("Get float... %s\n", Firebase.getFloat(fbdo, F("/test/float")) ? String(fbdo.to<float>()).c_str() : fbdo.errorReason().c_str());
-
-    // Serial.printf("Set double... %s\n", Firebase.setDouble(fbdo, F("/test/double"), count + 35.517549723765) ? "ok" : fbdo.errorReason().c_str());
-
-    // Serial.printf("Get double... %s\n", Firebase.getDouble(fbdo, F("/test/double")) ? String(fbdo.to<double>()).c_str() : fbdo.errorReason().c_str());
 
     // Serial.printf("Set string... %s\n", Firebase.setString(fbdo, F("/test/string"), "Hello World!") ? "ok" : fbdo.errorReason().c_str());
 
@@ -179,28 +156,20 @@ void loop() {
     // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create_Edit_Parse.ino
     FirebaseJson metricsJSON;
     Serial.println("Creating JSON with metrics data...");
-    Serial.print("Firebase loop index: ");
-    Serial.println(count);
 
-    Serial.print("Timestamp: ");
-    Serial.println(F("timestamp"));
-    Serial.print("LDRvalue: ");
-    Serial.println(latest_LDR_metric);
-
+    //Setup incremental indexing for Firebase
     char firebase_db_path[24] = "/device01/metrics/LDR/";
     char countAsString[4];
     char fullPath[27];
     itoa(count, countAsString, 10);
-    Serial.println(firebase_db_path);
-    Serial.println(countAsString);
     strcpy(fullPath, firebase_db_path);
     strcat(fullPath, countAsString);
-    // strcat(fullPath, countAsString);
-    // firebase_db_path = strcat(firebase_db_path, countAsString);
-    Serial.println(fullPath);
 
-    Serial.println("Initialising JSON");
-    // metricsJSON.set(String(count), latest_LDR_metric);
+    Serial.print("Updating metrics on path: ");
+    Serial.println(fullPath); //Log path
+
+    //Initialise JSON to send to Firebase
+    Serial.println("Initialising JSON...");
     metricsJSON.set(F("ts/.sv"), F("timestamp"));
     metricsJSON.set(F("/LDRvalue"), latest_LDR_metric);
     if (count == 0)
@@ -230,5 +199,6 @@ void loop() {
     // fb_esp_rtdb_data_type_array, fb_esp_rtdb_data_type_blob, and fb_esp_rtdb_data_type_file (10)
 
     count++;
+    Serial.println(separator);
   }
 }
