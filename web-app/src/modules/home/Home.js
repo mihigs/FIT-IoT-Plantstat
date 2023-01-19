@@ -121,8 +121,8 @@ function Home() {
   function handleSubmit(event){
     const dbRef = ref(getDatabase());
     let formData = {
-      'light': parseInt(lightThreshold),
-      'moisture': parseInt(moistureThreshold)
+      'light': parseFloat(lightThreshold),
+      'moisture': parseFloat(moistureThreshold)
     }
     set(child(dbRef, '/device01/thresholds'), formData);
   }
@@ -169,11 +169,11 @@ function Home() {
             <div className="modal-alerts-container">
                 <div className="input-container">
                   <label>Light</label>
-                  <input value={lightThreshold} className="threshold-input" onChange={handleLightInput}/>
+                  <input type="number" value={lightThreshold} className="threshold-input" onChange={handleLightInput}/>
                 </div>
                 <div className="input-container">
                   <label>Moisture</label>
-                  <input value={moistureThreshold} className="threshold-input" onChange={handleMoistureInput}/>
+                  <input type="number" value={moistureThreshold} className="threshold-input" onChange={handleMoistureInput}/>
                 </div>
             </div>
           </div>
