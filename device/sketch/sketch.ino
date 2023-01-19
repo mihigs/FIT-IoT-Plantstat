@@ -43,27 +43,31 @@ unsigned long count = 0;
 // LDR Characteristics
 const float GAMMA = 0.7;
 const float RL10 = 50;
+const float VOLTAGE_CALIBRATION = 4;
 
 const int LDR_PIN = 32; //Photoresistor sensor (LDR)
 const int LDR_LED_PIN = 33; //LED diode
 
 const int minimum_sunlight = 172; //~8600 lux
-int LDR_threshold = 1001;
+float LDR_threshold = 80.0;
 int moisture_threshold = 800;
 
-int latest_LDR_metric = -1;
+float latest_LDR_metric = -1.0;
 
-//Retrieves the latest photoresistor sensor readings
-int getLDRmetric() {
-  //Convert analog signal to lux
-  int analogValue = analogRead(LDR_PIN);
-  float voltage = analogValue / 1024. * 5;
+float convertToLux(int analogValue){
+  float voltage = (analogValue / VOLTAGE_CALIBRATION) / 1024. * 5;
   float resistance = 2000 * voltage / (1 - voltage / 5);
   float lux = pow(RL10 * 1e3 * pow(10, GAMMA) / resistance, (1 / GAMMA));
-  latest_LDR_metric = (int)lround(lux);
+  return lux;
+}
+
+//Retrieves the latest photoresistor sensor readings
+float getLDRmetric() {
+  //Convert analog signal to lux
+  latest_LDR_metric = convertToLux(analogRead(LDR_PIN));
 
   Serial.print("Lux: ");
-  Serial.println(lux);
+  Serial.println(latest_LDR_metric);
 
   //Turn on the LED if light metric is higher than the threshold
   handleThreshold(LDR_threshold, latest_LDR_metric, LDR_LED_PIN);
@@ -86,7 +90,7 @@ void initWifi(){
   Serial.println(separator);
 }
 
-void handleThreshold(int threshold, int metric, int LED){
+void handleThreshold(float threshold, float metric, int LED){
   if(metric > threshold){
     digitalWrite(LED, LOW);
   }else{
@@ -178,8 +182,8 @@ void loop() {
     Serial.println("Fetching thresholds... ");
     if(Firebase.getJSON(fbdo, F("/device01/thresholds/light"))){
       Serial.print("Light threshold: ");
-      Serial.println(fbdo.to<int>());
-      LDR_threshold = fbdo.to<int>();
+      Serial.println(fbdo.to<float>());
+      LDR_threshold = fbdo.to<float>();
     }else{
       Serial.println("No threshold found. Setting the defaults");
       thresholdsJSON.set(F("light"), LDR_threshold);
