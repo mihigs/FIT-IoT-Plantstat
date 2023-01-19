@@ -1,8 +1,10 @@
 // import { getFirestore, collection, getDocs } from 'firebase/firestore/lite';
 import "./Home.css";
 import { getDatabase, ref, child, get, set } from "firebase/database";
-import { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
+import { useEffect, useState, createRef } from 'react';
+import { Chart, Line } from 'react-chartjs-2';
+import annotationPlugin from 'chartjs-plugin-annotation';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,7 +13,7 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend,
+  Legend
 } from 'chart.js';
 
 ChartJS.register(
@@ -21,41 +23,26 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
-export const options = {
-  maintainAspectRatio: false,
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top',
-    },
-    title: {
-      display: true,
-      text: 'Chart.js Line Chart',
-    },
-  },
-};
-
-// export const data = {
-//   labels,
-//   datasets: [
-//     {
-//       label: 'Dataset 1',
-//       data: metrics,
-//       borderColor: 'rgb(255, 99, 132)',
-//       backgroundColor: 'rgba(255, 99, 132, 0.5)',
+// export const options = {
+//   maintainAspectRatio: false,
+//   responsive: true,
+//   plugins: {
+//     legend: {
+//       position: 'top',
 //     },
-//     // {
-//     //   label: 'Dataset 2',
-//     //   data: labels.map(() => faker.datatype.number({ min: -1000, max: 1000 })),
-//     //   borderColor: 'rgb(53, 162, 235)',
-//     //   backgroundColor: 'rgba(53, 162, 235, 0.5)',
-//     // },
-//   ],
+//     title: {
+//       display: true,
+//       text: 'Chart.js Line Chart',
+//     },
+//     annotation: {
+//       annotations: []
+//     }
+//   },
 // };
-
 
 function Home() {
   const [metrics, setMetrics] = useState([]);
@@ -63,6 +50,38 @@ function Home() {
   // const [thresholds, setThresholds] = useState([]);
   const [lightThreshold, setLightThreshold] = useState();
   const [moistureThreshold, setMoistureThreshold] = useState();
+  const [chartOptions, setChartOptions] = useState({
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Chart.js Line Chart',
+      },
+      annotation: {
+        annotations: [
+          {
+            id: `light_threshold`,
+            type: 'line',
+            mode: 'horizontal',
+            yMin: 0,
+            yMax: 0,
+            borderColor: 'rgb(75, 192, 192)',
+            borderWidth: 4,
+            label: {
+              enabled: true,
+              content: ""
+            }
+          }
+        ]
+      }
+    },
+  });
+  
+  let myChartRef = {};
 
   const data = {
     labels,
@@ -117,6 +136,7 @@ function Home() {
     setLightThreshold(thresholdsTemp[0][1]);
     setMoistureThreshold(thresholdsTemp[1][1]);
 
+    addThresholdAnnotation("Light", thresholdsTemp[0][1]);
   }
 
   function handleSubmit(event){
@@ -126,6 +146,8 @@ function Home() {
       'moisture': parseFloat(moistureThreshold)
     }
     set(child(dbRef, '/device01/thresholds'), formData);
+
+    addThresholdAnnotation("Light", parseFloat(lightThreshold));
   }
 
   function handleLightInput(event){
@@ -134,6 +156,23 @@ function Home() {
 
   function handleMoistureInput(event){
     setMoistureThreshold(event.target.value);
+  }
+
+  function addThresholdAnnotation(name, value){
+    // chartOptions.plugins.annotation.annotations[name] = annotation;
+    let temp = chartOptions;
+    temp.plugins.annotation.annotations[0].yMax = value; 
+    temp.plugins.annotation.annotations[0].yMin = value; 
+    temp.plugins.annotation.annotations[0].label.content = name; 
+    setChartOptions(temp)
+    console.log(chartOptions);
+    // debugger;
+    // debugger;
+    // .current.chartInstance;
+
+    // chart.update();
+    // Chart.update();
+    // ChartJS.update();
   }
 
   useEffect(()=>{
@@ -153,7 +192,7 @@ function Home() {
         })} */}
 
     <div className="chart-container mx-auto">
-      <Line width={50} height={40} options={options} data={data}/>
+      <Line redraw={true} ref={(reference) => myChartRef = reference } width={50} height={40} options={chartOptions} data={data}/>
     </div>
 
 
