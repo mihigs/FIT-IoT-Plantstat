@@ -105,8 +105,9 @@ function Home() {
   }
 
   function parseMetrics(metricsObject){
-    let metricsTemp = Object.values(metricsObject).map(metric => metric.LDRvalue).filter(x => x !== undefined);
-    let labelsTemp = Object.values(metricsObject).filter(x => x.ts !== undefined).map(metric => new Date(metric.ts).toLocaleString('en-GB'));
+    let metricsArray = Object.values(metricsObject).filter(x => x.ts !== undefined && x.LDRvalue !== undefined).sort((a, b) => a.ts - b.ts);
+    let metricsTemp = metricsArray.map(metric => metric.LDRvalue)
+    let labelsTemp = metricsArray.map(metric => new Date(metric.ts).toLocaleString('en-GB'));
     setMetrics(metricsTemp);
     setLabels(labelsTemp);
   }
