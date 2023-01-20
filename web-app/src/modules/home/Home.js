@@ -2,7 +2,7 @@
 import "./Home.css";
 import { getDatabase, ref, child, get, set } from "firebase/database";
 import { useEffect, useState, createRef } from 'react';
-import { Chart, Line } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import annotationPlugin from 'chartjs-plugin-annotation';
 
 import {
@@ -27,29 +27,13 @@ ChartJS.register(
   annotationPlugin
 );
 
-// export const options = {
-//   maintainAspectRatio: false,
-//   responsive: true,
-//   plugins: {
-//     legend: {
-//       position: 'top',
-//     },
-//     title: {
-//       display: true,
-//       text: 'Chart.js Line Chart',
-//     },
-//     annotation: {
-//       annotations: []
-//     }
-//   },
-// };
-
-function Home() {
+export function Home() {
   const [metrics, setMetrics] = useState([]);
   const [labels, setLabels] = useState([]);
   // const [thresholds, setThresholds] = useState([]);
-  const [lightThreshold, setLightThreshold] = useState();
-  const [moistureThreshold, setMoistureThreshold] = useState();
+  const [lightThreshold, setLightThreshold] = useState(0);
+  const [moistureThreshold, setMoistureThreshold] = useState(0);
+  const [dataChanged, setDataChanged] = useState(false);
   const [chartOptions, setChartOptions] = useState({
     maintainAspectRatio: false,
     responsive: true,
@@ -81,8 +65,6 @@ function Home() {
     },
   });
   
-  let myChartRef = {};
-
   const data = {
     labels,
     datasets: [
@@ -94,6 +76,8 @@ function Home() {
       }
     ],
   }
+
+  const chartRef = createRef(null);
   
   async function getMetrics(){
     const dbRef = ref(getDatabase());
@@ -145,9 +129,10 @@ function Home() {
       'light': parseFloat(lightThreshold),
       'moisture': parseFloat(moistureThreshold)
     }
-    set(child(dbRef, '/device01/thresholds'), formData);
-
-    addThresholdAnnotation("Light", parseFloat(lightThreshold));
+    set(child(dbRef, '/device01/thresholds'), formData).then(() => {
+      addThresholdAnnotation("Light", parseFloat(lightThreshold), chartRef.current);
+      setDataChanged(!dataChanged);
+    });
   }
 
   function handleLightInput(event){
@@ -158,27 +143,19 @@ function Home() {
     setMoistureThreshold(event.target.value);
   }
 
-  function addThresholdAnnotation(name, value){
-    // chartOptions.plugins.annotation.annotations[name] = annotation;
+  function addThresholdAnnotation(name, value, chartDOM = chartRef.current){
     let temp = chartOptions;
     temp.plugins.annotation.annotations[0].yMax = value; 
     temp.plugins.annotation.annotations[0].yMin = value; 
     temp.plugins.annotation.annotations[0].label.content = name; 
     setChartOptions(temp)
-    console.log(chartOptions);
-    // debugger;
-    // debugger;
-    // .current.chartInstance;
-
-    // chart.update();
-    // Chart.update();
-    // ChartJS.update();
   }
 
   useEffect(()=>{
     getMetrics();
     getThresholds();
-  }, []);
+    console.log("USE EFFECT")
+  }, [dataChanged]);
   
   return(
     <div className="main-container">
@@ -187,12 +164,9 @@ function Home() {
             <button type="button" className="set-threshold-btn btn btn-info" data-toggle="modal" data-target="#myModal">Setup alerts</button>
           </div>
           <hr/>
-        {/* {metrics.map((metric, index)=> {
-          <p>Metric: {{metric}}</p>
-        })} */}
 
     <div className="chart-container mx-auto">
-      <Line redraw={true} ref={(reference) => myChartRef = reference } width={50} height={40} options={chartOptions} data={data}/>
+      <Line ref={chartRef} width={50} height={40} options={chartOptions} data={data}/>
     </div>
 
 
@@ -218,7 +192,7 @@ function Home() {
             </div>
           </div>
           <div className="modal-footer">
-            <button onClick={handleSubmit} type="button" className="btn btn-success" data-dismiss="modal">Submit</button>
+            <button onClick={handleSubmit} type="submit" className="btn btn-success" data-dismiss="modal">Submit</button>
           </div>
         </div>
 
